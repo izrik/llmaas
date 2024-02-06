@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from flask import Flask, request
+from werkzeug.exceptions import InternalServerError, BadRequest
 from llama_index import ServiceContext
 from llama_index.chat_engine import SimpleChatEngine
 from llama_index.embeddings import HuggingFaceEmbedding
@@ -100,24 +101,35 @@ def hello_world():
         ]
     }
     """
-    body = request.json
-    system_prompt = body.get('system_prompt')
-    messages = [
-        ChatMessage(content=m.get('content'), role=m.get('role'))
-        for m in body.get('messages', [])
-    ]
-    chat_history = messages[:-1]
-    message = messages[-1]
-    chat_engine = SimpleChatEngine.from_defaults(
-        system_prompt=system_prompt,
-        service_context=service_context,
-    )
-    wrapped_response = chat_engine.chat(
-        message=message.content if message is not None else "",
-        chat_history=chat_history)
-    response = wrapped_response.response
-    print(f'Response: {response}')
-    return {'content': response, 'role': 'assistant'}
+    try:
+        body = request.json
+    except Exception as e:
+        raise InternalServerError(original_exception=e)
+    try:
+        system_prompt = body.get('system_prompt')
+        messages = [
+            ChatMessage(content=m.get('content'), role=m.get('role'))
+            for m in body.get('messages', [])
+        ]
+    except Exception as e:
+        raise BadRequest(str(e))
+    if len(messages) < 1:
+        raise BadRequest('No message history')
+    try:
+        chat_history = messages[:-1]
+        message = messages[-1]
+        chat_engine = SimpleChatEngine.from_defaults(
+            system_prompt=system_prompt,
+            service_context=service_context,
+        )
+        wrapped_response = chat_engine.chat(
+            message=message.content if message is not None else "",
+            chat_history=chat_history)
+        response = wrapped_response.response
+        print(f'Response: {response}')
+        return {'content': response, 'role': 'assistant'}
+    except Exception as e:
+        raise InternalServerError(original_exception=e)
 
 
 if __name__ == '__main__':
