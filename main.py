@@ -1,4 +1,8 @@
+#!/usr/bin/env python3
+
 from pathlib import Path
+import os
+from typing import Union
 
 from flask import Flask, request
 from werkzeug.exceptions import InternalServerError, BadRequest
@@ -8,11 +12,42 @@ from llama_index.embeddings import HuggingFaceEmbedding
 from llama_index.llms import LlamaCPP
 from llama_index.llms.base import ChatMessage
 
-PROJECT_ROOT_PATH: Path = Path(__file__).parents[0]
-MODELS_PATH: Path = PROJECT_ROOT_PATH / "models"
-MODELS_CACHE_PATH: Path = MODELS_PATH / "cache"
 
-model: str = 'Wizard-Vicuna-7B-Uncensored.Q4_K_M.gguf'
+def get_path_from_env(name: str, default_value: Union[Path, str]) -> Path:
+    path = os.getenv(name)
+    if path:
+        return Path(path)
+    return Path(default_value)
+
+
+def get_str_from_env(name: str, default_value: str) -> str:
+    value = os.getenv(name)
+    if value:
+        return value
+    return default_value
+
+
+PROJECT_ROOT_PATH = get_path_from_env(
+    'LLMAAS_PROJECT_ROOT_PATH',
+    Path(__file__).parents[0])
+MODELS_PATH = get_path_from_env(
+    'LLMAAS_MODELS_PATH',
+    PROJECT_ROOT_PATH / "models")
+MODELS_CACHE_PATH = get_path_from_env(
+    'LLMAAS_MODELS_CACHE_PATH',
+    MODELS_PATH / "cache")
+MODEL_NAME = get_str_from_env(
+    'LLMAAS_MODEL_NAME',
+    'Wizard-Vicuna-7B-Uncensored.Q4_K_M.gguf')
+MODEL_PATH = get_path_from_env(
+    'LLMAAS_MODEL_PATH',
+    MODELS_PATH / MODEL_NAME)
+
+print(f'PROJECT_ROOT_PATH: {PROJECT_ROOT_PATH}')
+print(f'MODELS_PATH: {MODELS_PATH}')
+print(f'MODELS_CACHE_PATH: {MODELS_CACHE_PATH}')
+print(f'MODEL_PATH: {MODEL_PATH}')
+
 llm_max_new_tokens: int = 256
 llm_context_window: int = 3900
 embedding_hf_model_name: str = 'BAAI/bge-small-en-v1.5'
@@ -20,7 +55,7 @@ temperature: float = 0.1
 n_gpu_layers: int = -1
 
 llm = LlamaCPP(
-    model_path=str(MODELS_PATH / model),
+    model_path=str(MODEL_PATH),
     temperature=temperature,
     max_new_tokens=llm_max_new_tokens,
     context_window=llm_context_window,
@@ -133,4 +168,4 @@ def hello_world():
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(host='0.0.0.0', debug=False)
