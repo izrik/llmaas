@@ -6,7 +6,8 @@ import os
 from typing import Union
 
 from flask import Flask, request
-from werkzeug.exceptions import InternalServerError, BadRequest
+from werkzeug.exceptions import (
+    InternalServerError, BadRequest, HTTPException)
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from message import MessageRole, ChatMessage
@@ -131,6 +132,8 @@ def hello_world():
     """  # noqa E501
     try:
         body = request.json
+    except HTTPException:
+        raise
     except Exception as e:
         raise InternalServerError(original_exception=e)
     try:
