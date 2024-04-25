@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import datetime
 import logging
 from pathlib import Path
 import os
@@ -11,6 +11,8 @@ from werkzeug.exceptions import (
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from message import MessageRole, ChatMessage
+
+from __version__ import __version__
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +71,10 @@ app = Flask(__name__)
 
 @app.route('/health')
 def health_check():
-    return 'OK'
+    return {
+        "__version__": __version__,
+        "datetime": datetime.datetime.now().astimezone().isoformat(),
+    }
 
 
 @app.route("/chat")
