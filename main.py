@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 from pathlib import Path
 import os
 from typing import Union
@@ -11,6 +12,8 @@ from llama_index.chat_engine import SimpleChatEngine
 from llama_index.embeddings import HuggingFaceEmbedding
 from llama_index.llms import LlamaCPP
 from llama_index.llms.base import ChatMessage
+
+log = logging.getLogger(__name__)
 
 
 def get_path_from_env(name: str, default_value: Union[Path, str]) -> Path:
@@ -164,6 +167,7 @@ def hello_world():
         print(f'Response: {response}')
         return {'content': response, 'role': 'assistant'}
     except Exception as e:
+        log.exception("There was an error processing the request")
         raise InternalServerError(original_exception=e)
 
 
