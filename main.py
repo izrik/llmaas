@@ -66,6 +66,11 @@ print('LLM ready')
 app = Flask(__name__)
 
 
+@app.route('/health')
+def health_check():
+    return 'OK'
+
+
 @app.route("/chat")
 def hello_world():
     """
