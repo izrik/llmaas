@@ -3,3 +3,4 @@
 instance/
 models/
 __pycache__/
+.git/
