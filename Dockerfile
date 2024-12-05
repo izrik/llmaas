@@ -1,13 +1,10 @@
-#FROM python:3.11.8-alpine3.19
-FROM python:3.11.8-bookworm
+FROM python:3.12.7-bookworm
 
-#RUN apk add gcc python3-dev musl-dev linux-headers make cmake
-#RUN apt install
-
-RUN pip install --upgrade pip setuptools \
-    pip install wheel \
+RUN pip install --upgrade pip setuptools ; \
+    pip install wheel ; \
     pip install gunicorn==21.2.0
-RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+RUN pip3 install torch==2.2.2 torchaudio==2.2.2 torchvision==0.17.2
 
 WORKDIR /llmaas
 COPY requirements.txt /llmaas/
