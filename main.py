@@ -7,11 +7,9 @@ from typing import Union
 
 from flask import Flask, request
 from werkzeug.exceptions import InternalServerError, BadRequest
-from llama_index import ServiceContext
-from llama_index.chat_engine import SimpleChatEngine
-from llama_index.embeddings import HuggingFaceEmbedding
-from llama_index.llms import LlamaCPP
-from llama_index.llms.base import ChatMessage
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from message import MessageRole, ChatMessage
 
 log = logging.getLogger(__name__)
 
@@ -57,24 +55,10 @@ embedding_hf_model_name: str = 'BAAI/bge-small-en-v1.5'
 temperature: float = 0.1
 n_gpu_layers: int = -1
 
-llm = LlamaCPP(
-    model_path=str(MODEL_PATH),
-    temperature=temperature,
-    max_new_tokens=llm_max_new_tokens,
-    context_window=llm_context_window,
-    generate_kwargs={},
-    model_kwargs={"n_gpu_layers": n_gpu_layers},
-    messages_to_prompt=None,
-    completion_to_prompt=None,
-    verbose=False,
-)
-embedding_model = HuggingFaceEmbedding(
-    model_name=embedding_hf_model_name,
-    cache_folder=str(MODELS_CACHE_PATH),
-)
-service_context = ServiceContext.from_defaults(
-    llm=llm, embed_model=embedding_model
-)
+device = "cpu"
+model_name = str(MODEL_PATH)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
 
 print('LLM ready')
 
@@ -86,7 +70,7 @@ def hello_world():
     """
     [
         ChatMessage(
-            role=<MessageRole.USER: 'user'>, 
+            role=<MessageRole.USER: 'user'>,
             content='What is your name?',
             additional_kwargs={}),
         ChatMessage(
@@ -96,14 +80,14 @@ def hello_world():
         ChatMessage(
             role=<MessageRole.USER: 'user'>,
             content='What do you like to do?',
-            additional_kwargs={}), 
+            additional_kwargs={}),
         ChatMessage(
-            role=<MessageRole.ASSISTANT: 'assistant'>, 
-            content='\nI enjoy helping others, reading books, and playing video games.', 
-            additional_kwargs={}), 
+            role=<MessageRole.ASSISTANT: 'assistant'>,
+            content='\nI enjoy helping others, reading books, and playing video games.',
+            additional_kwargs={}),
         ChatMessage(
-            role=<MessageRole.USER: 'user'>, 
-            content='What is your favorite video game?', 
+            role=<MessageRole.USER: 'user'>,
+            content='What is your favorite video game?',
             additional_kwargs={}),
         ChatMessage(
             role=<MessageRole.ASSISTANT: 'assistant'>,
@@ -138,7 +122,7 @@ def hello_world():
             }
         ]
     }
-    """
+    """  # noqa E501
     try:
         body = request.json
     except Exception as e:
@@ -154,16 +138,21 @@ def hello_world():
     if len(messages) < 1:
         raise BadRequest('No message history')
     try:
-        chat_history = messages[:-1]
-        message = messages[-1]
-        chat_engine = SimpleChatEngine.from_defaults(
-            system_prompt=system_prompt,
-            service_context=service_context,
-        )
-        wrapped_response = chat_engine.chat(
-            message=message.content if message is not None else "",
-            chat_history=chat_history)
-        response = wrapped_response.response
+        messages.insert(
+            0,
+            ChatMessage(content=system_prompt, role=MessageRole.SYSTEM))
+
+        input_text = tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            return_tensors="pt")
+        input_length = input_text.shape[1]
+        inputs = input_text
+        outputs = model.generate(inputs, max_new_tokens=100,
+                                 do_sample=True)
+        bd_outputs = tokenizer.batch_decode(outputs[:, input_length:],
+                                            skip_special_tokens=True)
+        response = bd_outputs[0]
         print(f'Response: {response}')
         return {'content': response, 'role': 'assistant'}
     except Exception as e:
