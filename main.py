@@ -39,7 +39,8 @@ MODELS_CACHE_PATH = get_path_from_env(
     MODELS_PATH / "cache")
 MODEL_NAME = get_str_from_env(
     'LLMAAS_MODEL_NAME',
-    'Wizard-Vicuna-7B-Uncensored.Q4_K_M.gguf')
+    # 'Wizard-Vicuna-7B-Uncensored.Q4_K_M.gguf')
+    'huggingface--HuggingFaceTB--SmolLM2-135M-Instruct')
 MODEL_PATH = get_path_from_env(
     'LLMAAS_MODEL_PATH',
     MODELS_PATH / MODEL_NAME)
