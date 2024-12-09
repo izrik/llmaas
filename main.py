@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-
+import datetime
 import logging
 from pathlib import Path
 import os
 from typing import Union
 
 from flask import Flask, request
-from werkzeug.exceptions import InternalServerError, BadRequest
+from werkzeug.exceptions import (
+    InternalServerError, BadRequest, HTTPException)
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from message import MessageRole, ChatMessage
+
+from __version__ import __version__
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +67,14 @@ model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
 print('LLM ready')
 
 app = Flask(__name__)
+
+
+@app.route('/health')
+def health_check():
+    return {
+        "__version__": __version__,
+        "datetime": datetime.datetime.now().astimezone().isoformat(),
+    }
 
 
 @app.route("/chat")
@@ -126,6 +137,8 @@ def hello_world():
     """  # noqa E501
     try:
         body = request.json
+    except HTTPException:
+        raise
     except Exception as e:
         raise InternalServerError(original_exception=e)
     try:

@@ -13,7 +13,14 @@ RUN pip install -r requirements.txt
 RUN mkdir /llmaas/models
 ENV PROJECT_ROOT_PATH="/llmaas"
 
-COPY main.py /llmaas/
+COPY main.py \
+     message.py \
+     /llmaas/
+
+ARG VERSION=0.0
+LABEL Name=llmaas
+LABEL Version=$VERSION
+RUN echo "__version__ = '$VERSION'" > /llmaas/__version__.py
 
 USER 1000
-CMD python main.py
+CMD ["python", "main.py"]
