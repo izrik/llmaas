@@ -1,5 +1,10 @@
-llama_cpp_python==0.2.23
-llama-index==0.9.3
-transformers==4.36.1
-torch==2.1.2
-Flask==3.0.1
+llama_cpp_python==0.3.2
+llama-index-core==0.12.1
+llama-index-embeddings-huggingface==0.4.0
+llama-index-llms-openai==0.3.2
+llama-index-llms-replicate==0.4.0
+transformers==4.46.3
+torch==2.2.2
+torchaudio==2.2.2
+torchvision==0.17.2
+Flask==3.1.0
