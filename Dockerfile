@@ -21,4 +21,4 @@ LABEL Version=$VERSION
 RUN echo "__version__ = '$VERSION'" > /llmaas/__version__.py
 
 USER 1000
-CMD python main.py
+CMD ["python", "main.py"]
